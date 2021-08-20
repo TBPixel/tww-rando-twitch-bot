@@ -13,16 +13,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TBPixel/tww-rando-twitch-bot/internal/twitch"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/urfave/cli/v2"
 )
 
-// authorizeUser implements the PKCE OAuth2 flow.
-func authorizeUser(ctx *cli.Context, clientID, clientSecret, redirectURL string) {
+// authorizeUser implements the OAuth2 flow.
+func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, redirectURL string) {
 	// construct the authorization URL
-	authorizationURL, _ := url.Parse(twitch.AuthURL)
+	authorizationURL, _ := url.Parse(authUrl)
 	q := authorizationURL.Query()
 	q.Set("scope", "openid")
 	q.Set("response_type", "code")
@@ -48,7 +47,7 @@ func authorizeUser(ctx *cli.Context, clientID, clientSecret, redirectURL string)
 
 		// trade the authorization code and the code verifier for an access token
 		//codeVerifier := CodeVerifier.String()
-		contents, err := getAccessTokenContents(clientID, clientSecret, code, redirectURL)
+		contents, err := getAccessTokenContents(tokenUrl, clientID, clientSecret, code, redirectURL)
 		if err != nil {
 			fmt.Printf("twitch: could not get access token: %s", err)
 			io.WriteString(w, "Error: could not retrieve access token\n")
@@ -109,7 +108,7 @@ type twitchAccessTokenContents struct {
 }
 
 // getAccessTokenContents trades the authorization code retrieved from the first OAuth2 leg for an access token
-func getAccessTokenContents(clientID, clientSecret, authorizationCode, callbackURL string) (*twitchAccessTokenContents, error) {
+func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode, callbackURL string) (*twitchAccessTokenContents, error) {
 	// set the url and form-encoded data for the POST to the access token endpoint
 	data := fmt.Sprintf(
 		"grant_type=authorization_code"+
@@ -121,7 +120,7 @@ func getAccessTokenContents(clientID, clientSecret, authorizationCode, callbackU
 	payload := strings.NewReader(data)
 
 	// create the request and execute it
-	req, _ := http.NewRequest("POST", twitch.TokenURL, payload)
+	req, _ := http.NewRequest("POST", tokenUrl, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
