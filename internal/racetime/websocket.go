@@ -135,9 +135,11 @@ func processChatMessage(c *websocket.Conn, msg []byte) error {
 	}
 
 	command := strings.TrimSpace(cm.Message.MessagePlain[len(botPrefix)+1:])
-	log.Println(len(command))
+	return parseCommand(c, command)
+}
 
-	return sendMsg(c, cm.Message.MessagePlain)
+func parseCommand(c *websocket.Conn, command string) error {
+	return sendMsg(c, command)
 }
 
 func sendMsg(c *websocket.Conn, message string) error {
