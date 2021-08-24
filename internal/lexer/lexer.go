@@ -1,72 +1,70 @@
-package racetime
+package lexer
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 	"unicode"
 )
 
 const (
-	// Tokens
 	ERROR = iota
 	ILLEGAL
 	EOF
 	IDENT
-	// Keywords
-	PREFIX
-	RACE
-	VS
-	LEADERBOARD
-	LINK
-	EXAMPLE_PERMA
-	PERMA
-	RESTREAM
-	MULTI
+	Keyword // iota of keywords. lexer users should append this to their iota as Keyword = iota + lexer.Keyword
 )
 
-type Token int
+// token represents a literary token for query purposes
+type token int
 
+// Ident packages an identifier iota and it's literary string representation
 type Ident struct {
-	Token Token
+	Token token
 	Lit   string
 }
 
-var tokens = []string{
-	// tokens
-	ERROR:   "ERROR",
-	ILLEGAL: "ILLEGAL",
-	EOF:     "EOF",
-	IDENT:   "IDENT",
-	// keywords
-	PREFIX:        "!twwr",
-	RACE:          "race",
-	VS:            "vs",
-	LEADERBOARD:   "leaderboard",
-	LINK:          "link",
-	EXAMPLE_PERMA: "exampleperma",
-	PERMA:         "perma",
-	RESTREAM:      "restream",
-	MULTI:         "multi",
+// idents groups a list of idents together
+type idents []Ident
+
+// Find searches a list of idents for the literary string and returns
+// the first match found, or nil otherwise
+func (idents idents) Find(lit string) *Ident {
+	for _, id := range idents {
+		if id.Lit != lit {
+			continue
+		}
+
+		return &id
+	}
+
+	return nil
 }
 
-func (t Token) String() string {
-	return tokens[t]
-}
-
+// Lexer provides a simple lexing iteration over a given reader.
 type Lexer struct {
 	reader *bufio.Reader
+	idents idents
+	tokens []string
 }
 
-func NewLexer(reader io.Reader) *Lexer {
+// New returns a new lexer which reads from the given io.Reader
+// and searches for the list of idents
+func New(reader io.Reader, idents []Ident) (*Lexer, error) {
+	if len(idents) > 0 && idents[0].Token < Keyword {
+		return nil, fmt.Errorf("first ident token iota of %d < %d, did you forget to do `Keyword = iota + lexer.Keyword`", idents[0].Token, Keyword)
+	}
+
 	return &Lexer{
 		reader: bufio.NewReader(reader),
-	}
+		idents: idents,
+	}, nil
 }
 
 // Lex scans the input for the next token. It returns the position of the token,
 // the token's type, and the literal value.
-func (l *Lexer) Lex() (Token, string, error) {
+func (l *Lexer) Lex() (token, string, error) {
 	// keep looping until we return a token
 	for {
 		r, _, err := l.reader.ReadRune()
@@ -94,28 +92,12 @@ func (l *Lexer) Lex() (Token, string, error) {
 				return ERROR, "", err
 			}
 
-			switch strings.ToLower(lit) {
-			case "!twwr":
-				return PREFIX, lit, nil
-			case "race":
-				return RACE, lit, nil
-			case "vs":
-				return VS, lit, nil
-			case "leaderboard":
-				return LEADERBOARD, lit, nil
-			case "link":
-				return LINK, lit, nil
-			case "exampleperma":
-				return EXAMPLE_PERMA, lit, nil
-			case "perma":
-				return PERMA, lit, nil
-			case "restream":
-				return RESTREAM, lit, nil
-			case "multi":
-				return MULTI, lit, nil
-			default:
+			ident := l.idents.Find(strings.ToLower(lit))
+			if ident == nil {
 				return IDENT, lit, nil
 			}
+
+			return ident.Token, lit, nil
 		}
 
 		return ILLEGAL, string(r), nil
@@ -146,6 +128,7 @@ func (l *Lexer) LexAll() ([]Ident, error) {
 	return idents, nil
 }
 
+// backup unreads the most recently read rune
 func (l *Lexer) backup() error {
 	return l.reader.UnreadRune()
 }
