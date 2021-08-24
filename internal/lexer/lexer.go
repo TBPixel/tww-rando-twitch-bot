@@ -16,12 +16,12 @@ const (
 	Keyword // iota of keywords. lexer users should append this to their iota as Keyword = iota + lexer.Keyword
 )
 
-// token represents a literary token for query purposes
-type token int
+// Token represents a literary Token for query purposes
+type Token int
 
 // Ident packages an identifier iota and it's literary string representation
 type Ident struct {
-	Token token
+	Token Token
 	Lit   string
 }
 
@@ -51,9 +51,15 @@ type Lexer struct {
 
 // New returns a new lexer which reads from the given io.Reader
 // and searches for the list of idents
+//
+// lex := lexer.New(reader, keywords)
+// Token, lit, err := lex.Lex()
+// if err != nil && err != io.EOF {
+//   return err
+// }
 func New(reader io.Reader, idents []Ident) (*Lexer, error) {
 	if len(idents) > 0 && idents[0].Token < Keyword {
-		return nil, fmt.Errorf("first ident token iota of %d < %d, did you forget to do `Keyword = iota + lexer.Keyword`", idents[0].Token, Keyword)
+		return nil, fmt.Errorf("first ident Token iota of %d < %d, did you forget to do `Keyword = iota + lexer.Keyword`", idents[0].Token, Keyword)
 	}
 
 	return &Lexer{
@@ -62,10 +68,10 @@ func New(reader io.Reader, idents []Ident) (*Lexer, error) {
 	}, nil
 }
 
-// Lex scans the input for the next token. It returns the position of the token,
-// the token's type, and the literal value.
-func (l *Lexer) Lex() (token, string, error) {
-	// keep looping until we return a token
+// Lex scans the input for the next Token. It returns the position of the Token,
+// the Token's type, and the literal value.
+func (l *Lexer) Lex() (Token, string, error) {
+	// keep looping until we return a Token
 	for {
 		r, _, err := l.reader.ReadRune()
 		if err != nil {

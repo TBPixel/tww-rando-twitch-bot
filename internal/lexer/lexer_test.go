@@ -37,7 +37,7 @@ func TestLex(t *testing.T) {
 			},
 		})
 
-		want := fmt.Errorf("first ident token iota of %d < %d, did you forget to do `Keyword = iota + lexer.Keyword`", lexer.Keyword-1, lexer.Keyword)
+		want := fmt.Errorf("first ident Token iota of %d < %d, did you forget to do `Keyword = iota + lexer.Keyword`", lexer.Keyword-1, lexer.Keyword)
 		if err.Error() != want.Error() {
 			t.Errorf("got '%v', want '%v'", err, want)
 		}
