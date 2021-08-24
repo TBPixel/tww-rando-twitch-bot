@@ -51,8 +51,8 @@ func TestLex(t *testing.T) {
 		lex := racetime.NewLexer(strings.NewReader(want))
 
 		token, got, _ := lex.Lex()
-		if token != racetime.INT {
-			t.Errorf("got %v, want %v", token, racetime.INT)
+		if token != racetime.IDENT {
+			t.Errorf("got %v, want %v", token, racetime.IDENT)
 		}
 
 		if got != want {
@@ -66,7 +66,21 @@ func TestLex(t *testing.T) {
 
 		token, got, _ := lex.Lex()
 		if token != racetime.IDENT {
-			t.Errorf("got %v, want %v", token, racetime.INT)
+			t.Errorf("got %v, want %v", token, racetime.IDENT)
+		}
+
+		if got != want {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("will return ident if an unknown word number combo is found", func(t *testing.T) {
+		want := "s4"
+		lex := racetime.NewLexer(strings.NewReader(want))
+
+		token, got, _ := lex.Lex()
+		if token != racetime.IDENT {
+			t.Errorf("got %v, want %v", token, racetime.IDENT)
 		}
 
 		if got != want {
@@ -129,12 +143,12 @@ func TestLex(t *testing.T) {
 		}
 	})
 
-	t.Run("will return ILLEGAL if a non letter or number is found", func(t *testing.T) {
-		lex := racetime.NewLexer(strings.NewReader("@"))
+	t.Run("will return ILLEGAL if a non letter, number or punctuation is found", func(t *testing.T) {
+		lex := racetime.NewLexer(strings.NewReader("+"))
 
 		token, _, _ := lex.Lex()
 		if token != racetime.ILLEGAL {
-			t.Errorf("got %v, want %v", token, racetime.INT)
+			t.Errorf("got %v, want %v", token, racetime.ILLEGAL)
 		}
 	})
 }
@@ -156,14 +170,18 @@ func TestLexAll(t *testing.T) {
 			},
 			{
 				Token: racetime.IDENT,
-				Lit:   "someident",
+				Lit:   "someident5",
 			},
 			{
-				Token: racetime.INT,
+				Token: racetime.IDENT,
+				Lit:   "5someident",
+			},
+			{
+				Token: racetime.IDENT,
 				Lit:   "12345",
 			},
 		}
-		lex := racetime.NewLexer(strings.NewReader("!twwr race vs someident 12345"))
+		lex := racetime.NewLexer(strings.NewReader("!twwr race vs someident5 5someident 12345"))
 
 		got, _ := lex.LexAll()
 		for i, ident := range got {

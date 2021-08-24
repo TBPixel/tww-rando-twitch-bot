@@ -12,7 +12,6 @@ const (
 	ERROR = iota
 	ILLEGAL
 	EOF
-	INT
 	IDENT
 	// Keywords
 	PREFIX
@@ -38,7 +37,6 @@ var tokens = []string{
 	ERROR:   "ERROR",
 	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
-	INT:     "INT",
 	IDENT:   "IDENT",
 	// keywords
 	PREFIX:        "!twwr",
@@ -84,18 +82,7 @@ func (l *Lexer) Lex() (Token, string, error) {
 			continue // nothing to do here, just move on
 		}
 
-		if unicode.IsDigit(r) {
-			// backup and let lexInt rescan the beginning of the int
-			err := l.backup()
-			if err != nil {
-				return ERROR, "", err
-			}
-
-			lit := l.lexInt()
-			return INT, lit, nil
-		}
-
-		if unicode.IsLetter(r) || r == '!' {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) || unicode.IsPunct(r) {
 			// backup and let lexIdent rescan the beginning of the ident
 			err := l.backup()
 			if err != nil {
@@ -161,29 +148,6 @@ func (l *Lexer) backup() error {
 	return err
 }
 
-// lexInt scans the input until the end of an integer and then returns the
-// literal.
-func (l *Lexer) lexInt() string {
-	var lit string
-	for {
-		r, _, err := l.reader.ReadRune()
-		if err != nil {
-			if err == io.EOF {
-				// at the end of the int
-				return lit
-			}
-		}
-
-		if unicode.IsDigit(r) {
-			lit = lit + string(r)
-		} else {
-			// scanned something not in the integer
-			l.backup()
-			return lit
-		}
-	}
-}
-
 // lexIdent scans the input until the end of an identifier and then returns the
 // literal.
 func (l *Lexer) lexIdent() string {
@@ -197,7 +161,7 @@ func (l *Lexer) lexIdent() string {
 			}
 		}
 
-		if unicode.IsLetter(r) || r == '!' {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) || unicode.IsPunct(r) {
 			lit = lit + string(r)
 		} else {
 			// scanned something not in the identifier
