@@ -89,7 +89,11 @@ func (l *Lexer) Lex() (Token, string, error) {
 				return ERROR, "", nil
 			}
 
-			lit := l.lexIdent()
+			lit, err := l.lexIdent()
+			if err != nil {
+				return ERROR, "", err
+			}
+
 			switch strings.ToLower(lit) {
 			case "!twwr":
 				return PREFIX, lit, nil
@@ -143,30 +147,34 @@ func (l *Lexer) LexAll() ([]Ident, error) {
 }
 
 func (l *Lexer) backup() error {
-	err := l.reader.UnreadRune()
-
-	return err
+	return l.reader.UnreadRune()
 }
 
 // lexIdent scans the input until the end of an identifier and then returns the
 // literal.
-func (l *Lexer) lexIdent() string {
+func (l *Lexer) lexIdent() (string, error) {
 	var lit string
 	for {
 		r, _, err := l.reader.ReadRune()
 		if err != nil {
 			if err == io.EOF {
 				// at the end of the identifier
-				return lit
+				return lit, nil
 			}
+
+			return lit, err
 		}
 
 		if unicode.IsLetter(r) || unicode.IsNumber(r) || unicode.IsPunct(r) {
 			lit = lit + string(r)
 		} else {
 			// scanned something not in the identifier
-			l.backup()
-			return lit
+			err := l.backup()
+			if err != nil {
+				return lit, err
+			}
+
+			return lit, nil
 		}
 	}
 }
