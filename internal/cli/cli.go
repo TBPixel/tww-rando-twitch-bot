@@ -21,8 +21,13 @@ func NewApp(app app.App) *cli.App {
 					{
 						Name:        "login",
 						Description: "Authorize twwr bot to act on your twitch channel",
-						Usage:       "Redirect to an ouath2 access request",
 						Action:      twitchLogin(app),
+					},
+					{
+						Name:        "chat",
+						Description: "Instruct twwr bot to join your twitch channel chat",
+						Usage:       "Specify the channel you want the bot to join chat for",
+						Action:      twitchChat(app),
 					},
 				},
 			},
@@ -33,7 +38,6 @@ func NewApp(app app.App) *cli.App {
 					{
 						Name:        "connect",
 						Description: "Link your racetime account",
-						Usage:       "Redirect to an oauth2 access request",
 						Action:      racetimeConnect(app),
 					},
 					{

@@ -24,7 +24,7 @@ func Run() (*App, error) {
 		return nil, err
 	}
 
-	irc := twitch.NewBot(conf.Twitch)
+	irc := twitch.NewBot(conf.Twitch, db)
 	go func() {
 		err = irc.Connect()
 	}()
