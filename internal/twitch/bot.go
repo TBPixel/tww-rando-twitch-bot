@@ -1,6 +1,7 @@
 package twitch
 
 import (
+	"context"
 	"log"
 	"strings"
 
@@ -18,64 +19,88 @@ var (
 	ErrNotEnoughArgs = errors.New("not enough arguments to bot")
 )
 
-// Bot
+// Bot remains connected to twitch IRC, watches
+// chats and shares messages received through a channel
 type Bot struct {
-	client *twitch.Client
+	client  *twitch.Client
+	msgChan <-chan twitch.PrivateMessage
 }
 
-// NewBot creates a client connected to the twitch IRC server
+// NewBot creates a client connected to the twitch Bot server
 func NewBot(conf config.Twitch, db *storage.DB) *Bot {
 	client := twitch.NewClient(conf.Username, conf.OAuth)
+	msgChan := make(chan twitch.PrivateMessage)
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		idents, err := parseBotCommands(message.Message)
-		if err != nil {
-			if err == ErrNotEnoughArgs {
-				return
-			}
-
-			log.Printf("error parsing bot commonds: %s", err)
-			return
-		}
-
-		switch idents[1].Token {
-		case RACE:
-			client.Say(message.Channel, "race")
-		case VS:
-			client.Say(message.Channel, "vs")
-		case LEADERBOARD:
-			client.Say(message.Channel, "leaderboard")
-		case LINK:
-			client.Say(message.Channel, "link")
-		case ExamplePerma:
-			client.Say(message.Channel, "exampleperma")
-		case PERMA:
-			client.Say(message.Channel, "perma")
-		case RESTREAM:
-			client.Say(message.Channel, "restream")
-		case MULTI:
-			client.Say(message.Channel, "multi")
-		default:
-			return
-		}
+		msgChan <- message
 	})
 
-	return &Bot{client}
+	return &Bot{client, msgChan}
 }
 
-// Connect to the twitch irc server
-func (b *Bot) Connect() error {
-	return b.client.Connect()
-}
-
-// Join an IRC for a twitch channel
+// Join a twitch channel to listen for private messages
 func (b *Bot) Join(channels ...string) {
 	b.client.Join(channels...)
 }
 
-// Disconnect from the twitch IRC server
-func (b *Bot) Disconnect() error {
-	return b.client.Disconnect()
+// Listen connects to the IRC server and awaits messages,
+// handling any it sees as commands.
+func (b *Bot) Listen(ctx context.Context) {
+	go func() {
+		err := b.client.Connect()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			err := b.client.Disconnect()
+			if err != nil {
+				log.Println(err)
+			}
+			return
+		case msg := <-b.msgChan:
+			err := b.handleMessage(msg)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
+}
+
+func (b *Bot) handleMessage(message twitch.PrivateMessage) error {
+	idents, err := parseBotCommands(message.Message)
+	if err != nil {
+		if err == ErrNotEnoughArgs {
+			return nil
+		}
+
+		log.Printf("error parsing bot commonds: %s", err)
+		return nil
+	}
+
+	switch idents[1].Token {
+	case RACE:
+		b.client.Say(message.Channel, "race")
+	case VS:
+		b.client.Say(message.Channel, "vs")
+	case LEADERBOARD:
+		b.client.Say(message.Channel, "leaderboard")
+	case LINK:
+		b.client.Say(message.Channel, "link")
+	case ExamplePerma:
+		b.client.Say(message.Channel, "exampleperma")
+	case PERMA:
+		b.client.Say(message.Channel, "perma")
+	case RESTREAM:
+		b.client.Say(message.Channel, "restream")
+	case MULTI:
+		b.client.Say(message.Channel, "multi")
+	}
+
+	return nil
 }
 
 func parseBotCommands(input string) ([]lexer.Ident, error) {

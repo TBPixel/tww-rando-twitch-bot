@@ -9,7 +9,7 @@ import (
 
 type App struct {
 	DB     *storage.DB
-	IRC    *twitch.Bot
+	Bot    *twitch.Bot
 	Config config.App
 }
 
@@ -24,14 +24,11 @@ func Run() (*App, error) {
 		return nil, err
 	}
 
-	irc := twitch.NewBot(conf.Twitch, db)
-	go func() {
-		err = irc.Connect()
-	}()
+	bot := twitch.NewBot(conf.Twitch, db)
 
 	return &App{
 		DB:     db,
-		IRC:    irc,
+		Bot:    bot,
 		Config: conf,
-	}, err
+	}, nil
 }

@@ -31,16 +31,11 @@ func twitchChat(app app.App) cli.ActionFunc {
 		if channel == "" {
 			return fmt.Errorf("twitch channel name is required")
 		}
-		bot := twitch.NewBot(app.Config.Twitch, app.DB)
-		bot.Join(channel)
+		app.Bot.Join(channel)
 
 		log.Printf("connecting to irc and watching %s\n", channel)
 
-		err := bot.Connect()
-		if err != nil {
-			return err
-		}
-		defer bot.Disconnect()
+		app.Bot.Listen(ctx.Context)
 
 		return nil
 	}
