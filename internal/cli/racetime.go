@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/app"
+	"github.com/TBPixel/tww-rando-twitch-bot/internal/racetime"
 	"github.com/urfave/cli/v2"
 )
 
@@ -13,6 +14,13 @@ func racetimeConnect(app app.App) cli.ActionFunc {
 		//	app.Config.Twitch.ClientSecret,
 		//	app.Config.Twitch.RedirectURL)
 		//log.Println(ctx.Context.Value("token"))
+		return nil
+	}
+}
+
+func TestApi(app app.App) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		racetime.UserSearch(app.Config.Racetime, "colfra");
 		return nil
 	}
 }

@@ -75,6 +75,11 @@ func NewApp(app app.App) *cli.App {
 							return nil
 						},
 					},
+					{
+						Name: "testApi",
+						Description: "Test specific api endpoints",
+						Action: TestApi(app),
+					},
 				},
 			},
 		},
