@@ -3,10 +3,16 @@ package racetime
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/config"
+
+	"github.com/fatih/structs"
 )
 
 type RaceData struct {
@@ -39,6 +45,10 @@ type RaceData struct {
 	} `json:"category,omitempty"`
 }
 
+type UserDataResponse struct {
+	Results []UserData `json:"results"`
+}
+
 type UserData struct {
 	ID                string      `json:"id"`
 	FullName          string      `json:"full_name"`
@@ -69,19 +79,114 @@ type CategoryResponse struct {
 	CurrentRaces      []RaceData `json:"current_races"`
 }
 
+type LeaderboardsResponse struct {
+	Goal      string `json:"goal"`
+	NumRanked string `json:"num_ranked"`
+	Rankings  struct {
+		User         string `json:"user"`
+		Place        string `json:"place"`
+		PlaceOrdinal string `json:"place_ordinal"`
+		Score        int    `json:"score"`
+		TimesRaced   string `json:"times_raced"`
+	}
+}
+
+type UserSearchParameters struct {
+	Name string
+	Scrim string
+	Term string
+}
+
 // CategoryDetail fetches the race data of a specific racetime.gg category
 func CategoryDetail(c config.Racetime, category string) (*CategoryResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/%s/data", c.URL, category))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	content, err := Get(c, fmt.Sprintf("%s/data", category), nil)
 
 	var cr *CategoryResponse
-	err = json.NewDecoder(resp.Body).Decode(cr)
+	json.Unmarshal([]byte(content), cr)
 	if err != nil {
 		return nil, err
 	}
 
 	return cr, nil
+}
+
+func CategoryLeaderboards(c config.Racetime, category string) (*LeaderboardsResponse, error) {
+	content, err := Get(c, fmt.Sprintf("%s/leaderboards/data", category), nil)
+
+	var cl *LeaderboardsResponse
+	json.Unmarshal([]byte(content), cl)
+	if err != nil {
+		return nil, err
+	}
+
+	return cl, nil
+}
+
+// RaceDetail fetches the race data of a specific racetime.gg race
+func RaceDetail(c config.Racetime, category string, race string) (*RaceData, error) {
+	content, err := Get(c, fmt.Sprintf("%s/%s/data", category, race), nil)
+
+	var rd *RaceData
+	json.Unmarshal([]byte(content), rd)
+	if err != nil {
+		return nil, err
+	}
+
+	return rd, nil
+}
+
+func PastUserRaces(c config.Racetime, user string, showEntrants bool, page int){
+	content, err := Get(c, fmt.Sprintf("user/%s/races/data", user), nil)
+
+	var pur *RaceData
+	json.Unmarshal([]byte(content), pur)
+	if err != nil {
+	}
+}
+
+func UserSearch(c config.Racetime, user string){
+	parameters := UserSearchParameters{
+		Name: "colfra",
+	}
+
+	m := structs.Map(parameters)
+	content, _ := Get(c, "user/search", m)
+	var userSearchResults UserDataResponse
+	json.Unmarshal([]byte(content), &userSearchResults)
+	log.Println(userSearchResults.Results[0].ID)
+}
+
+func GetTest(){
+	var test = `{"results": [{"id": "5BRGVMd30E368Lzv", "full_name": "colfra", "name": "colfra", "discriminator": null, "url": "/user/5BRGVMd30E368Lzv", "avatar": null, "pronouns": null, "flair": "staff", "twitch_name": null, "twitch_display_name": null, "twitch_channel": null, "can_moderate": false}]}`;
+	jd := json.NewDecoder(strings.NewReader(test))
+	var userResults UserDataResponse
+	jd.Decode(&userResults)
+	log.Println(userResults.Results[0].ID)
+}
+
+func Get(c config.Racetime, endpoint string, parameters map[string]interface{}) (string, error) {
+	requestUrl, err := url.Parse(fmt.Sprintf("%s/%s", c.URL, endpoint))
+	if (len(parameters) != 0){
+		q := requestUrl.Query()
+		for key, value := range parameters {
+			if (value != ""){
+				q.Add(strings.ToLower(key), value.(string))
+			}
+		}
+		requestUrl.RawQuery = q.Encode()
+	}
+
+	resp, err := http.Get(requestUrl.String())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    content := string(bodyBytes)
+
+	return content, nil
 }
