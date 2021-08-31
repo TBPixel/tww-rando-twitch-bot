@@ -57,7 +57,7 @@ func (c *ApiClient) GetUsers(channels []string) ([]User, error) {
 	query.Set("login", strings.Join(channels, ","))
 	req.URL.RawQuery = query.Encode()
 
-	body, err := c.send(req)
+	body, err := c.fetch(req)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (c *ApiClient) req(method, path string) (*http.Request, error) {
 	return req, nil
 }
 
-func (c *ApiClient) send(req *http.Request) (io.ReadCloser, error) {
+func (c *ApiClient) fetch(req *http.Request) (io.ReadCloser, error) {
 	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (c *ApiClient) send(req *http.Request) (io.ReadCloser, error) {
 		}
 
 		c.accessToken = accessToken
-		return c.send(req)
+		return c.fetch(req)
 	}
 
 	if res.StatusCode != http.StatusOK {

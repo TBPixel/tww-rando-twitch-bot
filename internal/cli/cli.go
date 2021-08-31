@@ -76,9 +76,56 @@ func NewApp(app app.App) *cli.App {
 						},
 					},
 					{
-						Name: "testApi",
-						Description: "Test specific api endpoints",
-						Action: TestApi(app),
+						Name:        "users",
+						Description: "subcommands for working with racetime users",
+						Subcommands: []*cli.Command{
+							{
+								Name:        "search",
+								Description: "search the racetime api for a specific user",
+								ArgsUsage:   "user",
+								Action:      racetimeUserSearch(app),
+							},
+							{
+								Name:        "races",
+								Description: "Retrieve a list of a users races",
+								ArgsUsage:   "id",
+								Flags: []cli.Flag{
+									&cli.BoolFlag{
+										Name:  "show_entrants",
+										Value: false,
+									},
+									&cli.UintFlag{
+										Name:  "page",
+										Value: 1,
+									},
+								},
+								Action: racetimePastUserRaces(app),
+							},
+						},
+					},
+					{
+						Name:        "category",
+						Description: "racetime.gg category commands",
+						Subcommands: []*cli.Command{
+							{
+								Name:        "detail",
+								Description: "see category details for a racetime.gg category",
+								ArgsUsage:   "category",
+								Action:      racetimeCategoryDetail(app),
+							},
+							{
+								Name:        "leaderboards",
+								Description: "see category leaderboards",
+								ArgsUsage:   "category",
+								Action:      racetimeCategoryLeaderboards(app),
+							},
+							{
+								Name:        "race",
+								Description: "see details about a specific race within a category",
+								ArgsUsage:   "category race",
+								Action:      racetimeRaceDetail(app),
+							},
+						},
 					},
 				},
 			},
