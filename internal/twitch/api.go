@@ -119,7 +119,7 @@ func (c *ApiClient) send(req *http.Request) (io.ReadCloser, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return res.Body, fmt.Errorf("status code %v from twitch api: %+v\n", res.StatusCode)
+		return res.Body, fmt.Errorf("status code %v from twitch api", res.StatusCode)
 	}
 
 	return res.Body, nil

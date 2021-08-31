@@ -44,7 +44,7 @@ func twitchLogin(app app.App) cli.ActionFunc {
 			if err != nil {
 				return err
 			}
-			log.Printf("new user created with id %s for ttv %s", user.ID, user.TwitchName)
+			log.Printf("new user created with id %d for ttv %s", user.ID, user.TwitchName)
 		}
 
 		log.Printf("%+v\n", user)
