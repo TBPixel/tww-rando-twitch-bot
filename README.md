@@ -6,10 +6,10 @@ The Wind Waker Randomizer community twitch bot. A public chat bot, API and web a
 
 - [Roadmap](#roadmap)
 - [Development](#development)
-  - [React](#react)
 - [Specification](#specification)
   - [Chat Commands](#chat-commands)
   - [API](#api)
+- [React](#react)
 
 ## Roadmap
 
@@ -41,6 +41,8 @@ All development environments are welcome; please remember to `.gitignore` any de
 
 Copy the example env `cp .example.env .env` and edit as needed.
 
+For `TWITCH_` environment variables, generate them by following the official twitch [chatbot/irc documentation on environment variables](https://dev.twitch.tv/docs/irc#get-environment-variables).
+
 ### Go Backend
 
 Run the backend with go as such:
@@ -49,7 +51,26 @@ Run the backend with go as such:
 go run ./cmd/cli
 ```
 
-### React
+## Specification
+
+### Chat Commands
+
+- [ ] `!twwr` A help command that lists all the available commands.
+- [ ] `!twwr race` Display info about the current race, such as settings and preset info.
+- [ ] `!twwr vs` Display (and possibly link to the streams of) the other runners in this race.
+- [ ] `!twwr leaderboard` Retrieve the leaderboard position of the current runner, including their RT Bux.
+- [ ] `!twwr link` Get a link to the racetime room.
+- [ ] `!twwr exampleperma` Get an example permalink for the current settings, if available.
+- [ ] `!twwr perma` Get the permalink for the current settings, if available.
+- [ ] `!twwr restream` Get a link to the restream, if available.
+- [ ] `!twwr multi` Generate a link to a multi-twitch stream view of all the runners in the racetime room.
+
+### API
+
+TODO
+
+
+## React
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -95,21 +116,3 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
-
-## Specification
-
-### Chat Commands
-
-- [ ] `!twwr` A help command that lists all the available commands.
-- [ ] `!twwr race` Display info about the current race, such as settings and preset info.
-- [ ] `!twwr vs` Display (and possibly link to the streams of) the other runners in this race.
-- [ ] `!twwr leaderboard` Retrieve the leaderboard position of the current runner, including their RT Bux.
-- [ ] `!twwr link` Get a link to the racetime room.
-- [ ] `!twwr exampleperma` Get an example permalink for the current settings, if available.
-- [ ] `!twwr perma` Get the permalink for the current settings, if available.
-- [ ] `!twwr restream` Get a link to the restream, if available.
-- [ ] `!twwr multi` Generate a link to a multi-twitch stream view of all the runners in the racetime room.
-
-### API
-
-TODO

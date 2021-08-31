@@ -8,9 +8,10 @@ import (
 )
 
 type App struct {
-	DB     *storage.DB
-	Bot    *twitch.Bot
-	Config config.App
+	TwitchClient *twitch.ApiClient
+	DB           *storage.DB
+	Bot          *twitch.Bot
+	Config       config.App
 }
 
 func Run() (*App, error) {
@@ -25,10 +26,15 @@ func Run() (*App, error) {
 	}
 
 	bot := twitch.NewBot(conf.Twitch, db)
+	ttvClient, err := twitch.NewApiClient(conf.Twitch)
+	if err != nil {
+		return nil, err
+	}
 
 	return &App{
-		DB:     db,
-		Bot:    bot,
-		Config: conf,
+		TwitchClient: ttvClient,
+		DB:           db,
+		Bot:          bot,
+		Config:       conf,
 	}, nil
 }

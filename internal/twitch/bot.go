@@ -28,7 +28,7 @@ type Bot struct {
 
 // NewBot creates a client connected to the twitch Bot server
 func NewBot(conf config.Twitch, db *storage.DB) *Bot {
-	client := twitch.NewClient(conf.Username, conf.OAuth)
+	client := twitch.NewClient(conf.Username, conf.IRCOAuth)
 	msgChan := make(chan twitch.PrivateMessage)
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {

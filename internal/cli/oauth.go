@@ -57,7 +57,7 @@ func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, 
 			return
 		}
 
-		ctx.Context = context.WithValue(ctx.Context, "token", contents)
+		ctx.Context = context.WithValue(ctx.Context, "token", *contents)
 
 		// return an indication of success to the caller
 		io.WriteString(w, `
@@ -101,14 +101,14 @@ func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, 
 	server.Serve(l)
 }
 
-type twitchAccessTokenContents struct {
+type TwitchAccessTokenContents struct {
 	UserID            string  `json:"user_id"`
 	ExpiresAt         float64 `json:"expires_in"`
 	PreferredUsername string  `json:"preferred_username"`
 }
 
 // getAccessTokenContents trades the authorization code retrieved from the first OAuth2 leg for an access token
-func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode, callbackURL string) (*twitchAccessTokenContents, error) {
+func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode, callbackURL string) (*TwitchAccessTokenContents, error) {
 	// set the url and form-encoded data for the POST to the access token endpoint
 	data := fmt.Sprintf(
 		"grant_type=authorization_code"+
@@ -145,9 +145,9 @@ func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode,
 		return nil, err
 	}
 
-	var contents *twitchAccessTokenContents
+	var contents *TwitchAccessTokenContents
 	if claims, ok := tkn.Claims.(jwt.MapClaims); ok {
-		contents = &twitchAccessTokenContents{
+		contents = &TwitchAccessTokenContents{
 			PreferredUsername: claims["preferred_username"].(string),
 			UserID:            claims["sub"].(string),
 			ExpiresAt:         claims["exp"].(float64),
