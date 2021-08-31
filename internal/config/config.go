@@ -14,8 +14,8 @@ func Open() App {
 			EnableLogging: false,
 		},
 		Twitch: Twitch{
+			IRCOAuth:     os.Getenv("TWITCH_IRC_OAUTH"),
 			Username:     os.Getenv("TWITCH_USERNAME"),
-			OAuth:        os.Getenv("TWITCH_OAUTH"),
 			ClientID:     os.Getenv("TWITCH_CLIENT_ID"),
 			ClientSecret: os.Getenv("TWITCH_CLIENT_SECRET"),
 			RedirectURL:  os.Getenv("TWITCH_REDIRECT_URL"),
@@ -40,18 +40,20 @@ type DB struct {
 
 // Twitch
 type Twitch struct {
+	IRCOAuth     string
 	Username     string
-	OAuth        string
 	ClientID     string
 	ClientSecret string
 	RedirectURL  string
 }
 
 type Racetime struct {
+	Category     string
 	URL          string
 	WSSchema     string
 	ClientID     string
 	ClientSecret string
+	RedirectURL  string
 }
 
 func newRacetime() Racetime {
@@ -60,9 +62,11 @@ func newRacetime() Racetime {
 		wsSchema = "ws"
 	}
 	return Racetime{
+		Category:     "twwr",
 		URL:          os.Getenv("RACETIME_URL"),
 		WSSchema:     wsSchema,
 		ClientID:     os.Getenv("RACETIME_CLIENT_ID"),
 		ClientSecret: os.Getenv("RACETIME_CLIENT_SECRET"),
+		RedirectURL:  os.Getenv("RACETIME_REDIRECT_URL"),
 	}
 }
