@@ -52,6 +52,8 @@ func (db *DB) FindUsers(query UserQuery) ([]*User, error) {
 	var q *badgerhold.Query
 	if query.Field == FieldID {
 		q = badgerhold.Where(badgerhold.Key).Eq(query.Value).Limit(1)
+	} else if query.Field == FieldActiveInChannel {
+		q = badgerhold.Where(string(query.Field)).Eq(query.Value).And(string(FieldTwitchID)).Ne("").And(string(FieldRacetimeID)).Ne("")
 	} else {
 		q = badgerhold.Where(string(query.Field)).Eq(query.Value)
 	}

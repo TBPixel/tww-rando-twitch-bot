@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -13,17 +12,22 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TBPixel/tww-rando-twitch-bot/internal/config"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/urfave/cli/v2"
 )
 
+type tokenParserFunc func(config config.App, reader io.ReadCloser) (interface{}, error)
+
 // authorizeUser implements the OAuth2 flow.
-func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, redirectURL string) {
+func authorizeUser(ctx *cli.Context, config config.App, authUrl, tokenUrl, clientID, clientSecret, redirectURL string, scopes []string, parserFunc tokenParserFunc) {
+
 	// construct the authorization URL
 	authorizationURL, _ := url.Parse(authUrl)
 	q := authorizationURL.Query()
-	q.Set("scope", "openid")
+	q.Set("scope", strings.Join(scopes, " "))
 	q.Set("response_type", "code")
 	q.Set("client_id", clientID)
 	q.Set("redirect_uri", redirectURL)
@@ -37,7 +41,7 @@ func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, 
 		// get the authorization code
 		code := r.URL.Query().Get("code")
 		if code == "" {
-			fmt.Println("twitch: Url Param 'code' is missing")
+			fmt.Println("oauth: Url Param 'code' is missing")
 			io.WriteString(w, "Error: could not find 'code' URL parameter\n")
 
 			// close the HTTP server and return
@@ -47,9 +51,9 @@ func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, 
 
 		// trade the authorization code and the code verifier for an access token
 		//codeVerifier := CodeVerifier.String()
-		contents, err := getAccessTokenContents(tokenUrl, clientID, clientSecret, code, redirectURL)
+		reader, err := getTokenResponse(tokenUrl, clientID, clientSecret, code, redirectURL)
 		if err != nil {
-			fmt.Printf("twitch: could not get access token: %s", err)
+			fmt.Printf("oauth: could not get access token: %s", err)
 			io.WriteString(w, "Error: could not retrieve access token\n")
 
 			// close the HTTP server and return
@@ -57,7 +61,16 @@ func authorizeUser(ctx *cli.Context, authUrl, tokenUrl, clientID, clientSecret, 
 			return
 		}
 
-		ctx.Context = context.WithValue(ctx.Context, "token", *contents)
+		contents, err := parserFunc(config, reader)
+		if err != nil {
+			fmt.Printf("oauth: could not parse access token: %s", err)
+			io.WriteString(w, "error, failed to parse access token\n")
+
+			// close the HTTP server and return
+			cleanup(server)
+			return
+		}
+		ctx.Context = context.WithValue(ctx.Context, "token", contents)
 
 		// return an indication of success to the caller
 		io.WriteString(w, `
@@ -107,8 +120,17 @@ type TwitchAccessTokenContents struct {
 	PreferredUsername string  `json:"preferred_username"`
 }
 
-// getAccessTokenContents trades the authorization code retrieved from the first OAuth2 leg for an access token
-func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode, callbackURL string) (*TwitchAccessTokenContents, error) {
+type RacetimeAccessTokenContents struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Avatar     string `json:"avatar"`
+	Pronouns   string `json:"pronouns"`
+	Flair      string `json:"flair"`
+	TwitchName string `json:"twitch_name"`
+}
+
+// getTokenResponse trades the authorization code retrieved from the first OAuth2 leg for an access token
+func getTokenResponse(tokenUrl, clientID, clientSecret, authorizationCode, callbackURL string) (io.ReadCloser, error) {
 	// set the url and form-encoded data for the POST to the access token endpoint
 	data := fmt.Sprintf(
 		"grant_type=authorization_code"+
@@ -124,17 +146,26 @@ func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode,
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Printf("twitch: HTTP error: %s", err)
+		fmt.Printf("oauth: HTTP error: %s", err)
 		return nil, err
 	}
 
-	// process the response
-	defer res.Body.Close()
+	return res.Body, nil
+}
+
+// cleanup closes the HTTP server
+func cleanup(server *http.Server) {
+	// we run this as a goroutine so that this function falls through and
+	// the socket to the browser gets flushed/closed before the server goes away
+	go server.Close()
+}
+
+func twitchTokenParserFunc(_ config.App, reader io.ReadCloser) (interface{}, error) {
+	defer reader.Close()
 	var responseBody map[string]interface{}
-	body, _ := ioutil.ReadAll(res.Body)
 
 	// unmarshal the json into a string map
-	err = json.Unmarshal(body, &responseBody)
+	err := json.NewDecoder(reader).Decode(&responseBody)
 	if err != nil {
 		fmt.Printf("twitch: JSON error: %s", err)
 		return nil, err
@@ -145,9 +176,9 @@ func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode,
 		return nil, err
 	}
 
-	var contents *TwitchAccessTokenContents
+	var contents TwitchAccessTokenContents
 	if claims, ok := tkn.Claims.(jwt.MapClaims); ok {
-		contents = &TwitchAccessTokenContents{
+		contents = TwitchAccessTokenContents{
 			PreferredUsername: claims["preferred_username"].(string),
 			UserID:            claims["sub"].(string),
 			ExpiresAt:         claims["exp"].(float64),
@@ -160,9 +191,34 @@ func getAccessTokenContents(tokenUrl, clientID, clientSecret, authorizationCode,
 	return contents, nil
 }
 
-// cleanup closes the HTTP server
-func cleanup(server *http.Server) {
-	// we run this as a goroutine so that this function falls through and
-	// the socket to the browser gets flushed/closed before the server goes away
-	go server.Close()
+func racetimeTokenParserFunc(config config.App, reader io.ReadCloser) (interface{}, error) {
+	defer reader.Close()
+	var responseBody map[string]interface{}
+
+	// unmarshal the json into a string map
+	err := json.NewDecoder(reader).Decode(&responseBody)
+	if err != nil {
+		fmt.Printf("racetime: JSON error: %s", err)
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/o/userinfo", config.Racetime.URL), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", responseBody["access_token"]))
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var contents RacetimeAccessTokenContents
+	err = json.NewDecoder(res.Body).Decode(&contents)
+	if err != nil {
+		return nil, err
+	}
+
+	return contents, nil
 }

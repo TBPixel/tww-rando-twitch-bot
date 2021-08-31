@@ -14,7 +14,7 @@ type App struct {
 	Config       config.App
 }
 
-func Run() (*App, error) {
+func New() (*App, error) {
 	// opt to ignore dotenv loader as it is a development convenience
 	_ = godotenv.Load()
 

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	application, err := app.Run()
+	application, err := app.New()
 	if err != nil {
 		log.Fatalln(err)
 	}

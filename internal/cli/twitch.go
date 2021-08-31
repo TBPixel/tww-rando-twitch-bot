@@ -19,11 +19,14 @@ func twitchLogin(app app.App) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		authorizeUser(
 			ctx,
+			app.Config,
 			twitch.AuthURL,
 			twitch.TokenURL,
 			app.Config.Twitch.ClientID,
 			app.Config.Twitch.ClientSecret,
-			app.Config.Twitch.RedirectURL)
+			app.Config.Twitch.RedirectURL,
+			[]string{"openid"},
+			twitchTokenParserFunc)
 		token, ok := ctx.Context.Value("token").(TwitchAccessTokenContents)
 		if !ok {
 			return fmt.Errorf("failed to get token from twitch api")
