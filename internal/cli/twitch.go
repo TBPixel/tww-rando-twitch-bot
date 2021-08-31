@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/storage"
 
@@ -53,16 +55,50 @@ func twitchLogin(app app.App) cli.ActionFunc {
 	}
 }
 
-func twitchChat(app app.App) cli.ActionFunc {
+func twitchFollow(app app.App) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-		channel := ctx.Args().First()
-		if channel == "" {
-			return fmt.Errorf("twitch channel name is required")
+		enabled := !ctx.Bool("disable")
+		idStr := ctx.Args().First()
+		if idStr == "" {
+			return fmt.Errorf("missing required argument: id")
 		}
-		app.Bot.Join(channel)
 
-		log.Printf("connecting to irc and watching %s\n", channel)
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return fmt.Errorf("id must be an unsigned integer")
+		}
 
+		user, err := app.DB.UpdateUser(uint64(id), storage.UserUpdate{
+			ActiveInChannel: &enabled,
+		})
+		if err != nil {
+			return err
+		}
+
+		log.Printf("twitch bot follow mode set to %v for channel %s", enabled, user.TwitchName)
+
+		return nil
+	}
+}
+
+func twitchListen(app app.App) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		users, err := app.DB.FindUsers(storage.UserQuery{
+			Field: storage.FieldActiveInChannel,
+			Value: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		var channels []string
+		for _, u := range users {
+			channels = append(channels, u.TwitchName)
+		}
+
+		app.Bot.Join(channels...)
+
+		log.Printf("bot listening to all active twitch channels: %s", strings.Join(channels, ", "))
 		app.Bot.Listen(ctx.Context)
 
 		return nil

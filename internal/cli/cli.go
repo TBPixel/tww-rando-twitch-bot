@@ -24,10 +24,24 @@ func NewApp(app app.App) *cli.App {
 						Action:      twitchLogin(app),
 					},
 					{
-						Name:        "chat",
-						Description: "Instruct twwr bot to join your twitch channel chat",
+						Name:        "follow",
+						Description: "Instruct twwr bot to follow a channel when listening",
 						Usage:       "Specify the channel you want the bot to join chat for",
-						Action:      twitchChat(app),
+						ArgsUsage:   "account_id channel",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:    "disable",
+								Aliases: []string{"d"},
+								Usage:   "instruct the bot to stop listening on your twitch channel",
+								Value:   false,
+							},
+						},
+						Action: twitchFollow(app),
+					},
+					{
+						Name:        "listen",
+						Description: "Listen for all active twitch channels",
+						Action:      twitchListen(app),
 					},
 				},
 			},
@@ -43,6 +57,7 @@ func NewApp(app app.App) *cli.App {
 					{
 						Name:        "chat",
 						Description: "watch the chat of the given race",
+						ArgsUsage:   "race",
 						Action: func(context *cli.Context) error {
 							name := context.Args().First()
 							if name == "" {
