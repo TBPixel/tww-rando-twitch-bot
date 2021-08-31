@@ -16,20 +16,20 @@ The Wind Waker Randomizer community twitch bot. A public chat bot, API and web a
 - [ ] Conceptualize project as a CLI
   - [Refer to the spec](#specification)
 - [ ] Document self-hosting and deployment options
-- [ ] Define data model
+- [x] Define data model
 - [ ] Support local and remote database drivers
-  - [ ] Support Badger embedded database
+  - [x] Support Badger embedded database
   - [ ] Support remote PostgreSQL database
-- [ ] Twitch IRC Bot Integration
+- [x] Twitch IRC Bot Integration
 - [ ] Integrate with Twitch API
   - [x] Oauth2 w/ Twitch API
   - [ ] Integrate with Twitch pubsub APIs (go live events, etc)
 - [ ] Integrate with Racetime.gg API
   - [ ] Oauth2 w/ Racetime.gg API
-  - [ ] Integrate with Racetime.gg pubsub APIs (race room open, etc)
-  - [ ] Integrate with Racetime.gg leaderboard APIs
-  - [ ] Integrate with Racetime.gg user APIs
-  - [ ] Integrate with Racetime.gg race room APIs
+  - [ ] Integrate with Racetime.gg APIs to watch race rooms
+  - [x] Integrate with Racetime.gg leaderboard APIs
+  - [x] Integrate with Racetime.gg user APIs
+  - [x] Integrate with Racetime.gg race room APIs
 
 ## Development
 
@@ -68,7 +68,6 @@ go run ./cmd/cli
 ### API
 
 TODO
-
 
 ## React
 
