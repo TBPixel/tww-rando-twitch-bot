@@ -1,11 +1,7 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/app"
-	"github.com/TBPixel/tww-rando-twitch-bot/internal/racetime"
-
 	"github.com/urfave/cli/v2"
 )
 
@@ -52,28 +48,8 @@ func NewApp(app app.App) *cli.App {
 					{
 						Name:        "connect",
 						Description: "Link your racetime account",
+						ArgsUsage:   "id",
 						Action:      racetimeConnect(app),
-					},
-					{
-						Name:        "chat",
-						Description: "watch the chat of the given race",
-						ArgsUsage:   "race",
-						Action: func(context *cli.Context) error {
-							name := context.Args().First()
-							if name == "" {
-								return fmt.Errorf("race name is required")
-							}
-
-							bot, err := racetime.NewBot(app.Config.Racetime)
-							if err != nil {
-								return err
-							}
-							err = bot.Connect(context.Context, name)
-							if err != nil {
-								return err
-							}
-							return nil
-						},
 					},
 					{
 						Name:        "users",

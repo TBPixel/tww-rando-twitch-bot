@@ -3,6 +3,9 @@ package cli
 import (
 	"fmt"
 	"log"
+	"strconv"
+
+	"github.com/TBPixel/tww-rando-twitch-bot/internal/storage"
 
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/app"
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/racetime"
@@ -11,12 +14,48 @@ import (
 
 func racetimeConnect(app app.App) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-		//authorizeUser(
-		//	ctx,
-		//	app.Config.Twitch.ClientID,
-		//	app.Config.Twitch.ClientSecret,
-		//	app.Config.Twitch.RedirectURL)
-		//log.Println(ctx.Context.Value("token"))
+		// This is to workaround being in a cli context.
+		// In an actual app we'd keep the user authenticated
+		// and link them via a session
+		idStr := ctx.Args().First()
+		if idStr == "" {
+			return fmt.Errorf("missing required argument: account_id")
+		}
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			return err
+		}
+
+		user, err := app.DB.FindUser(storage.UserQuery{
+			Field: storage.FieldID,
+			Value: uint64(id),
+		})
+		if err != nil {
+			return err
+		}
+
+		authorizeUser(
+			ctx,
+			app.Config,
+			fmt.Sprintf("%s/%s", app.Config.Racetime.URL, racetime.AuthURL),
+			fmt.Sprintf("%s/%s", app.Config.Racetime.URL, racetime.TokenURL),
+			app.Config.Racetime.ClientID,
+			app.Config.Racetime.ClientSecret,
+			app.Config.Racetime.RedirectURL,
+			[]string{"read"},
+			racetimeTokenParserFunc)
+
+		tkn, ok := ctx.Context.Value("token").(RacetimeAccessTokenContents)
+		if !ok {
+			return fmt.Errorf("failed to parse racetime access token contents")
+		}
+
+		user, err = app.DB.UpdateUser(user.ID, storage.UserUpdate{
+			RacetimeID: &tkn.ID,
+		})
+
+		log.Printf("%+v\n", user)
+
 		return nil
 	}
 }
