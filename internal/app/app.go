@@ -25,7 +25,7 @@ func New() (*App, error) {
 		return nil, err
 	}
 
-	bot := twitch.NewBot(conf.Twitch, db)
+	bot := twitch.NewBot(conf.Twitch, db, conf.Racetime.URL)
 	ttvClient, err := twitch.NewApiClient(conf.Twitch)
 	if err != nil {
 		return nil, err

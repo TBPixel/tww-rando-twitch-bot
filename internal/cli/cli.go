@@ -34,11 +34,6 @@ func NewApp(app app.App) *cli.App {
 						},
 						Action: twitchFollow(app),
 					},
-					{
-						Name:        "listen",
-						Description: "Listen for all active twitch channels",
-						Action:      twitchListen(app),
-					},
 				},
 			},
 			{
@@ -110,6 +105,12 @@ func NewApp(app app.App) *cli.App {
 						},
 					},
 				},
+			},
+			{
+				Name:      "bot",
+				Usage:     "Run the Wind Waker Randomizer Twitch bot from the command line",
+				ArgsUsage: "category",
+				Action:    twwrBot(app),
 			},
 		},
 	}

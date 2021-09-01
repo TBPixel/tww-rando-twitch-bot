@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/config"
@@ -88,18 +89,38 @@ type UserData struct {
 }
 
 type CategoryResponse struct {
-	Name              string     `json:"name"`
-	ShortName         string     `json:"short_name"`
-	Slug              string     `json:"slug"`
-	URL               string     `json:"url"`
-	DataURL           string     `json:"data_url"`
-	Image             string     `json:"image"`
-	Info              string     `json:"info"`
-	StreamingRequired bool       `json:"streaming_required"`
-	Owners            []UserData `json:"owners"`
-	Moderators        []UserData `json:"moderators"`
-	Goals             []string   `json:"goals"`
-	CurrentRaces      []RaceData `json:"current_races"`
+	Name              string      `json:"name"`
+	ShortName         string      `json:"short_name"`
+	Slug              string      `json:"slug"`
+	URL               string      `json:"url"`
+	DataURL           string      `json:"data_url"`
+	Image             interface{} `json:"image"`
+	Info              interface{} `json:"info"`
+	StreamingRequired bool        `json:"streaming_required"`
+	Owners            []UserData  `json:"owners"`
+	Moderators        []UserData  `json:"moderators"`
+	Goals             []string    `json:"goals"`
+	CurrentRaces      []struct {
+		Name   string `json:"name"`
+		Status struct {
+			Value        string `json:"value"`
+			VerboseValue string `json:"verbose_value"`
+			HelpText     string `json:"help_text"`
+		} `json:"status"`
+		URL     string `json:"url"`
+		DataURL string `json:"data_url"`
+		Goal    struct {
+			Name   string `json:"name"`
+			Custom bool   `json:"custom"`
+		} `json:"goal"`
+		Info                  string      `json:"info"`
+		EntrantsCount         int         `json:"entrants_count"`
+		EntrantsCountFinished int         `json:"entrants_count_finished"`
+		EntrantsCountInactive int         `json:"entrants_count_inactive"`
+		OpenedAt              time.Time   `json:"opened_at"`
+		StartedAt             interface{} `json:"started_at"`
+		TimeLimit             string      `json:"time_limit"`
+	} `json:"current_races"`
 }
 
 type LeaderboardsResponse struct {
@@ -146,6 +167,27 @@ func CategoryDetail(c config.Racetime, category string) (*CategoryResponse, erro
 	}
 
 	return &cr, nil
+}
+
+func CategoryRaces(c config.Racetime, category string) ([]RaceData, error) {
+	res, err := CategoryDetail(c, category)
+	if err != nil {
+		return nil, err
+	}
+
+	var races []RaceData
+	for _, r := range res.CurrentRaces {
+		nameSplit := strings.Split(r.Name, "/")
+		name := nameSplit[1]
+		race, err := RaceDetail(c, category, name)
+		if err != nil {
+			return nil, err
+		}
+
+		races = append(races, *race)
+	}
+
+	return races, nil
 }
 
 func CategoryLeaderboards(c config.Racetime, category string) (*LeaderboardsResponse, error) {

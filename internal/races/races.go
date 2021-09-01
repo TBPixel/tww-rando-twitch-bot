@@ -58,18 +58,28 @@ func (m *Monitor) RemoveListener(listener chan []racetime.RaceData) {
 
 // Listen for new races, updating the local race list of races
 func (m *Monitor) Listen(ctx context.Context) error {
+	races, err := racetime.CategoryRaces(m.config, m.category)
+	if err != nil {
+		log.Println(err)
+	} else {
+		m.mut.Lock()
+		m.races = races
+		m.emit(races)
+		m.mut.Unlock()
+	}
+
 	for {
 		select {
 		case <-time.After(m.config.RaceRefreshInterval):
-			res, err := racetime.CategoryDetail(m.config, m.category)
-			log.Println(res)
+			races, err := racetime.CategoryRaces(m.config, m.category)
 			if err != nil {
-				return err
+				log.Println(err)
+				return nil
 			}
 
 			m.mut.Lock()
-			m.races = res.CurrentRaces
-			m.emit(res.CurrentRaces)
+			m.races = races
+			m.emit(races)
 			m.mut.Unlock()
 		case <-ctx.Done():
 			return nil
@@ -86,6 +96,9 @@ func (m *Monitor) Races() []racetime.RaceData {
 }
 
 func (m *Monitor) emit(races []racetime.RaceData) {
+	m.listenerMutex.Lock()
+	defer m.listenerMutex.Unlock()
+
 	for _, l := range m.listeners {
 		l <- races
 	}
