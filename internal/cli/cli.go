@@ -101,6 +101,12 @@ func NewApp(app app.App) *cli.App {
 								ArgsUsage:   "category race",
 								Action:      racetimeRaceDetail(app),
 							},
+							{
+								Name:        "monitor",
+								Description: "monitor the active races of a specific category",
+								ArgsUsage:   "category",
+								Action:      racetimeCategoryMonitor(app),
+							},
 						},
 					},
 				},

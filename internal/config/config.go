@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strings"
+	"time"
 )
 
 // Open
@@ -48,12 +49,13 @@ type Twitch struct {
 }
 
 type Racetime struct {
-	Category     string
-	URL          string
-	WSSchema     string
-	ClientID     string
-	ClientSecret string
-	RedirectURL  string
+	Category            string
+	URL                 string
+	WSSchema            string
+	ClientID            string
+	ClientSecret        string
+	RedirectURL         string
+	RaceRefreshInterval time.Duration
 }
 
 func newRacetime() Racetime {
@@ -62,11 +64,12 @@ func newRacetime() Racetime {
 		wsSchema = "ws"
 	}
 	return Racetime{
-		Category:     "twwr",
-		URL:          os.Getenv("RACETIME_URL"),
-		WSSchema:     wsSchema,
-		ClientID:     os.Getenv("RACETIME_CLIENT_ID"),
-		ClientSecret: os.Getenv("RACETIME_CLIENT_SECRET"),
-		RedirectURL:  os.Getenv("RACETIME_REDIRECT_URL"),
+		Category:            os.Getenv("RACETIME_CATEGORY"),
+		URL:                 os.Getenv("RACETIME_URL"),
+		WSSchema:            wsSchema,
+		ClientID:            os.Getenv("RACETIME_CLIENT_ID"),
+		ClientSecret:        os.Getenv("RACETIME_CLIENT_SECRET"),
+		RedirectURL:         os.Getenv("RACETIME_REDIRECT_URL"),
+		RaceRefreshInterval: time.Second * 30,
 	}
 }

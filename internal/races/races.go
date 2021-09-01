@@ -2,6 +2,7 @@ package races
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -12,17 +13,46 @@ import (
 // Monitor actively pings the races API, maintaining a list
 // of current races
 type Monitor struct {
-	config config.Racetime
-	races  []racetime.RaceData
-	mut    sync.Mutex
+	category      string
+	config        config.Racetime
+	races         []racetime.RaceData
+	mut           sync.Mutex
+	listeners     []chan []racetime.RaceData
+	listenerMutex sync.Mutex
 }
 
 // NewMonitor creates a new racetime monitor
-func NewMonitor(config config.Racetime) *Monitor {
+func NewMonitor(config config.Racetime, category string) *Monitor {
 	return &Monitor{
-		config: config,
-		races:  []racetime.RaceData{},
-		mut:    sync.Mutex{},
+		category:      category,
+		config:        config,
+		races:         []racetime.RaceData{},
+		mut:           sync.Mutex{},
+		listeners:     []chan []racetime.RaceData{},
+		listenerMutex: sync.Mutex{},
+	}
+}
+
+func (m *Monitor) AddListener() chan []racetime.RaceData {
+	m.listenerMutex.Lock()
+	defer m.listenerMutex.Unlock()
+
+	listener := make(chan []racetime.RaceData)
+	m.listeners = append(m.listeners, listener)
+
+	return listener
+}
+
+func (m *Monitor) RemoveListener(listener chan []racetime.RaceData) {
+	m.listenerMutex.Lock()
+	defer m.listenerMutex.Unlock()
+
+	for i, l := range m.listeners {
+		if l != listener {
+			continue
+		}
+
+		m.listeners = append(m.listeners[:i], m.listeners[i+1:]...)
 	}
 }
 
@@ -30,14 +60,16 @@ func NewMonitor(config config.Racetime) *Monitor {
 func (m *Monitor) Listen(ctx context.Context) error {
 	for {
 		select {
-		case <-time.After(time.Minute):
-			res, err := racetime.CategoryDetail(m.config, m.config.Category)
+		case <-time.After(m.config.RaceRefreshInterval):
+			res, err := racetime.CategoryDetail(m.config, m.category)
+			log.Println(res)
 			if err != nil {
 				return err
 			}
 
 			m.mut.Lock()
 			m.races = res.CurrentRaces
+			m.emit(res.CurrentRaces)
 			m.mut.Unlock()
 		case <-ctx.Done():
 			return nil
@@ -51,4 +83,10 @@ func (m *Monitor) Races() []racetime.RaceData {
 	defer m.mut.Unlock()
 
 	return m.races
+}
+
+func (m *Monitor) emit(races []racetime.RaceData) {
+	for _, l := range m.listeners {
+		l <- races
+	}
 }
