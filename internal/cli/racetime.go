@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
+
+	"github.com/TBPixel/tww-rando-twitch-bot/internal/races"
 
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/storage"
 
@@ -150,5 +153,30 @@ func racetimeRaceDetail(app app.App) cli.ActionFunc {
 		log.Printf("%+v\n", raceDetail)
 
 		return nil
+	}
+}
+
+func racetimeCategoryMonitor(app app.App) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		category := ctx.Args().First()
+		if category == "" {
+			return fmt.Errorf("missing required argument: category")
+		}
+
+		monitor := races.NewMonitor(app.Config.Racetime, category)
+		listener := monitor.AddListener()
+		defer monitor.RemoveListener(listener)
+
+		go monitor.Listen(ctx.Context)
+
+		log.Printf("monitoring races for category %s", category)
+		for {
+			select {
+			case racesData := <-listener:
+				log.Printf("%s: %+v\n", time.Now(), racesData)
+			case <-ctx.Context.Done():
+				return nil
+			}
+		}
 	}
 }
