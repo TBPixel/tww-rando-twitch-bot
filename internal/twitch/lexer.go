@@ -3,7 +3,9 @@ package twitch
 import "github.com/TBPixel/tww-rando-twitch-bot/internal/lexer"
 
 const (
-	PREFIX = iota + lexer.Keyword
+	PLAY = iota + lexer.Keyword
+	PREFIX
+	SETTINGS
 	RACE
 	VS
 	LEADERBOARD
@@ -12,12 +14,21 @@ const (
 	PERMA
 	RESTREAM
 	MULTI
+	HELP
 )
 
 var Keywords = []lexer.Ident{
 	{
+		Token: PLAY,
+		Lit:   "!play",
+	},
+	{
 		Token: PREFIX,
 		Lit:   "!twwr",
+	},
+	{
+		Token: SETTINGS,
+		Lit:   "settings",
 	},
 	{
 		Token: RACE,
@@ -50,5 +61,9 @@ var Keywords = []lexer.Ident{
 	{
 		Token: MULTI,
 		Lit:   "multi",
+	},
+	{
+		Token: HELP,
+		Lit:   "help",
 	},
 }

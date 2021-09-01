@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 
 	"github.com/TBPixel/tww-rando-twitch-bot/internal/storage"
 
@@ -79,30 +78,6 @@ func twitchFollow(app app.App) cli.ActionFunc {
 		}
 
 		log.Printf("twitch bot follow mode set to %v for channel %s", enabled, user.TwitchName)
-
-		return nil
-	}
-}
-
-func twitchListen(app app.App) cli.ActionFunc {
-	return func(ctx *cli.Context) error {
-		users, err := app.DB.FindUsers(storage.UserQuery{
-			Field: storage.FieldActiveInChannel,
-			Value: true,
-		})
-		if err != nil {
-			return err
-		}
-
-		var channels []string
-		for _, u := range users {
-			channels = append(channels, u.TwitchName)
-		}
-
-		app.Bot.Join(channels...)
-
-		log.Printf("bot listening to all active twitch channels: %s", strings.Join(channels, ", "))
-		app.Bot.Listen(ctx.Context)
 
 		return nil
 	}

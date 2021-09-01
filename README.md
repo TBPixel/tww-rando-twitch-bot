@@ -24,7 +24,7 @@ The Wind Waker Randomizer community twitch bot. A public chat bot, API and web a
 - [ ] Integrate with Twitch API
   - [x] Oauth2 w/ Twitch API
   - [ ] Integrate with Twitch pubsub APIs (go live events, etc)
-- [ ] Integrate with Racetime.gg API
+- [x] Integrate with Racetime.gg API
   - [x] Oauth2 w/ Racetime.gg API
   - [x] Integrate with Racetime.gg APIs to watch race rooms
   - [x] Integrate with Racetime.gg leaderboard APIs
