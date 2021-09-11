@@ -13,7 +13,7 @@ The Wind Waker Randomizer community twitch bot. A public chat bot, API and web a
 
 ## Roadmap
 
-- [ ] Conceptualize project as a CLI
+- [x] Conceptualize project as a CLI
   - [Refer to the spec](#specification)
 - [ ] Document self-hosting and deployment options
 - [x] Define data model
@@ -55,15 +55,16 @@ go run ./cmd/cli
 
 ### Chat Commands
 
-- [ ] `!twwr` A help command that lists all the available commands.
-- [ ] `!twwr race` Display info about the current race, such as settings and preset info.
-- [ ] `!twwr vs` Display (and possibly link to the streams of) the other runners in this race.
+- [x] `!twwr` A help command that lists all the available commands.
+- [x] `!twwr race` Display info about the current race, such as settings and preset info.
+- [x] `!twwr vs` Display (and possibly link to the streams of) the other runners in this race.
 - [ ] `!twwr leaderboard` Retrieve the leaderboard position of the current runner, including their RT Bux.
-- [ ] `!twwr link` Get a link to the racetime room.
-- [ ] `!twwr exampleperma` Get an example permalink for the current settings, if available.
-- [ ] `!twwr perma` Get the permalink for the current settings, if available.
+- [x] `!twwr link` Get a link to the racetime room.
+- [x] `!twwr exampleperma` Get an example permalink for the current settings, if available.
+- [x] `!twwr perma` Get the permalink for the current settings, if available.
 - [ ] `!twwr restream` Get a link to the restream, if available.
-- [ ] `!twwr multi` Generate a link to a multi-twitch stream view of all the runners in the racetime room.
+- [x] `!twwr multi` Generate a link to a multi-twitch stream view of all the runners in the racetime room.
+- [x] `!play` To play marbles on stream
 
 ### API
 
